@@ -35,6 +35,8 @@ android {
     buildFeatures {
         compose = true
     }
+
+
 }
 
 dependencies {
@@ -54,6 +56,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation(libs.androidx.ui)
     implementation(libs.androidx.glance)
+    implementation ("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("androidx.compose.material:material-icons-extended:compose_version")
+    implementation(libs.play.services.base)
 
 
     testImplementation(libs.junit)
