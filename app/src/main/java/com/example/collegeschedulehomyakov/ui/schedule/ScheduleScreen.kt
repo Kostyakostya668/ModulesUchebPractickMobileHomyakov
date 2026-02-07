@@ -112,7 +112,7 @@ fun ScheduleScreen(
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        // Покажем отладочную информацию
+        // отладочная информация
         if (error != null || isLoading) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -320,42 +320,21 @@ fun ScheduleScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DayScheduleCard(daySchedule: ScheduleByDateDto) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Заголовок дня
             Text(
-                text = "${daySchedule.weekday}",
+                text = "${daySchedule.weekday}, ${daySchedule.lessonDate}",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
             )
-            Text(
-                text = daySchedule.lessonDate,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
 
             if (daySchedule.lessons.isEmpty()) {
-                Text(
-                    text = "Нет занятий",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                Text("Нет занятий")
             } else {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     daySchedule.lessons.forEach { lesson ->
                         SimpleLessonCard(lesson)
                     }
@@ -364,6 +343,7 @@ fun DayScheduleCard(daySchedule: ScheduleByDateDto) {
         }
     }
 }
+
 
 
 

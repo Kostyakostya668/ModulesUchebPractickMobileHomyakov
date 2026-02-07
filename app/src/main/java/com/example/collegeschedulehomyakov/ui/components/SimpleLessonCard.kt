@@ -1,6 +1,8 @@
 package com.example.collegeschedulehomyakov.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,74 +15,6 @@ import com.example.collegeschedulehomyakov.utils.getSubjectIcon
 
 @Composable
 fun SimpleLessonCard(lesson: com.example.collegeschedulehomyakov.data.dto.LessonDto) {
-    // Ищем данные в groupParts
-    val lessonInfo = when {
-        // Если есть FULL группа
-        lesson.groupParts[LessonGroupPart.FULL] != null -> {
-            val full = lesson.groupParts[LessonGroupPart.FULL]!!
-            LessonDisplayInfo(
-                subject = full.subject,
-                teacher = full.teacher,
-                teacherPosition = full.teacherPosition,
-                classroom = full.classroom,
-                building = full.building,
-                address = full.address,
-                hasSubgroups = false
-            )
-        }
-        // Если есть подгруппы
-        lesson.groupParts.any { it.value != null } -> {
-            val firstValidPart = lesson.groupParts.values.firstOrNull { it != null }
-            firstValidPart?.let { part ->
-                LessonDisplayInfo(
-                    subject = part.subject,
-                    teacher = part.teacher,
-                    teacherPosition = part.teacherPosition,
-                    classroom = part.classroom,
-                    building = part.building,
-                    address = part.address,
-                    hasSubgroups = true
-                )
-            }
-        }
-        // Нет данных
-        else -> {
-            LessonDisplayInfo(
-                subject = "Не указано",
-                teacher = "",
-                teacherPosition = "",
-                classroom = "",
-                building = "",
-                address = "",
-                hasSubgroups = false
-            )
-        }
-    } ?: LessonDisplayInfo(
-        subject = "Нет информации",
-        teacher = "",
-        teacherPosition = "",
-        classroom = "",
-        building = "",
-        address = "",
-        hasSubgroups = false
-    )
-
-    // Отображаем карточку
-    LessonCardContent(
-        number = lesson.lessonNumber,
-        time = lesson.time,
-        info = lessonInfo
-    )
-}
-
-@Composable
-private fun LessonCardContent(
-    number: Int,
-    time: String,
-    info: LessonDisplayInfo
-) {
-    val buildingColor = getBuildingColor(info.building)
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -90,53 +24,148 @@ private fun LessonCardContent(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Левая часть: номер и время
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.width(70.dp)
-            ) {
-                Text(
-                    text = number.toString(),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = buildingColor
-                )
-                Text(
-                    text = time,
-                    style = MaterialTheme.typography.labelSmall
-                )
-                if (info.hasSubgroups) {
-                    Spacer(modifier = Modifier.height(2.dp))
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Заголовок: номер пары и время
+            LessonHeader(
+                number = lesson.lessonNumber,
+                time = lesson.time,
+                hasSubgroups = lesson.groupParts.size > 1
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Отображаем ВСЕ подгруппы
+            when {
+                // 1 Есть занятие для всей группы
+                lesson.groupParts[LessonGroupPart.FULL] != null -> {
+                    val full = lesson.groupParts[LessonGroupPart.FULL]!!
+                    SubgroupItem(
+                        partName = "Вся группа",
+                        info = full,
+                        showDivider = false
+                    )
+                }
+
+                // 2 Есть подгруппы
+                lesson.groupParts.any { it.value != null } -> {
+                    // Отображаем каждую не-null подгруппу
+                    val validParts = lesson.groupParts.filter { it.value != null }
+
+                    validParts.entries.forEachIndexed { index, (part, info) ->
+                        info?.let {
+                            SubgroupItem(
+                                partName = when (part) {
+                                    LessonGroupPart.SUB1 -> "Подгруппа 1"
+                                    LessonGroupPart.SUB2 -> "Подгруппа 2"
+                                    else -> "Группа"
+                                },
+                                info = it,
+                                showDivider = index < validParts.size - 1
+                            )
+                        }
+                    }
+                }
+
+                // 3 Нет данных
+                else -> {
                     Text(
-                        text = "👥",
-                        style = MaterialTheme.typography.labelSmall
+                        text = "Нет информации о занятии",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.width(12.dp))
+@Composable
+private fun LessonHeader(
+    number: Int,
+    time: String,
+    hasSubgroups: Boolean
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Номер пары
+        Text(
+            text = "$number",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.width(40.dp)
+        )
 
-            // Иконка предмета (эмодзи)
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Время и индикатор подгрупп
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = time,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (hasSubgroups) {
+                Text(
+                    text = "Подгруппы",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubgroupItem(
+    partName: String,
+    info: com.example.collegeschedulehomyakov.data.dto.LessonPartDto,
+    showDivider: Boolean
+) {
+    val buildingColor = getBuildingColor(info.building)
+
+    Column {
+        // Название подгруппы
+        Text(
+            text = partName,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Информация о занятии
+        Row(
+            verticalAlignment = Alignment.Top
+        ) {
+            // Иконка предмета
             Text(
                 text = getSubjectIcon(info.subject),
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineSmall
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Информация
+            // Детали
             Column(modifier = Modifier.weight(1f)) {
+                // Предмет
                 Text(
                     text = info.subject,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
 
-                if (info.teacher.isNotBlank()) {
+                // Преподаватель
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = info.teacher,
                         style = MaterialTheme.typography.bodyMedium,
@@ -144,15 +173,30 @@ private fun LessonCardContent(
                     )
                 }
 
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // Должность преподавателя (если есть)
                 if (info.teacherPosition.isNotBlank()) {
                     Text(
                         text = info.teacherPosition,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                if (info.building.isNotBlank() && info.classroom.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Аудитория
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = buildingColor
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "${info.building}, ауд. ${info.classroom}",
                         style = MaterialTheme.typography.bodySmall,
@@ -160,111 +204,25 @@ private fun LessonCardContent(
                     )
                 }
 
+                // Адрес (если есть)
                 if (info.address.isNotBlank()) {
                     Text(
                         text = info.address,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
-    }
-}
 
-// Вспомогательный класс для отображения
-private data class LessonDisplayInfo(
-    val subject: String,
-    val teacher: String,
-    val teacherPosition: String,
-    val classroom: String,
-    val building: String,
-    val address: String,
-    val hasSubgroups: Boolean
-)
-
-// Дополнительная карточка для отображения всех подгрупп (опционально)
-@Composable
-fun DetailedLessonCard(lesson: com.example.collegeschedulehomyakov.data.dto.LessonDto) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Заголовок: номер пары и время
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Пара ${lesson.lessonNumber}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = lesson.time,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
+        // Разделитель между подгруппами
+        if (showDivider) {
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Отображаем каждую подгруппу
-            lesson.groupParts.forEach { (part, info) ->
-                if (info != null) {
-                    SubgroupInfo(part = part, info = info)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SubgroupInfo(part: LessonGroupPart, info: com.example.collegeschedulehomyakov.data.dto.LessonPartDto) {
-    val buildingColor = getBuildingColor(info.building)
-
-    Column(
-        modifier = Modifier.padding(vertical = 4.dp)
-    ) {
-        // Название подгруппы
-        Text(
-            text = when (part) {
-                LessonGroupPart.FULL -> "Вся группа"
-                LessonGroupPart.SUB1 -> "Подгруппа 1"
-                LessonGroupPart.SUB2 -> "Подгруппа 2"
-            },
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        // Информация о занятии
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = getSubjectIcon(info.subject),
-                style = MaterialTheme.typography.headlineSmall
+            Divider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = info.subject,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = info.teacher,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${info.building}, ауд. ${info.classroom}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = buildingColor
-                )
-            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

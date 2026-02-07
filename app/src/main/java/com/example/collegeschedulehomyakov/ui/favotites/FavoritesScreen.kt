@@ -28,7 +28,7 @@ fun FavoritesScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "⭐ Избранные группы",
+            text = "Избранные группы",
             style = MaterialTheme.typography.headlineMedium
         )
 
